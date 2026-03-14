@@ -2,7 +2,6 @@ import { registerRootComponent } from 'expo';
 import RNAndroidNotificationListener, { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener';
 import { AppRegistry } from 'react-native';
 import { Audio } from 'expo-av';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from './App';
 
 let soundObject = null;
@@ -11,43 +10,30 @@ const headlessNotificationListener = async ({ notification }) => {
   if (!notification) return;
 
   const appName = notification.app || '';
-  const title = notification.title || '';
-  const text = notification.text || '';
-  const time = new Date().toLocaleTimeString();
-
-  // Save the notification log for debugging in the UI
-  try {
-    const logEntry = { appName, title, text, time };
-    const existingLogs = await AsyncStorage.getItem('notification_logs');
-    const logs = existingLogs ? JSON.parse(existingLogs) : [];
-    logs.unshift(logEntry);
-    await AsyncStorage.setItem('notification_logs', JSON.stringify(logs.slice(0, 10)));
-  } catch (e) {
-    console.error('Log Save Error:', e);
-  }
+  const title = (notification.title || '').toLowerCase();
+  const text = (notification.text || '').toLowerCase();
+  const lowApp = appName.toLowerCase();
 
   console.log('--- BİLDİRİM GELDİ ---', { appName, title, text });
 
-  // BROADER MATCHING LOGIC
-  const lowTitle = title.toLowerCase();
-  const lowText = text.toLowerCase();
-  const lowApp = appName.toLowerCase();
-
-  const isRustMatch = 
+  // HYPER-AGGRESSIVE MATCHING
+  // 1. If it's the Rust+ app (package name or title)
+  // 2. Or if content contains keywords
+  const isRustApp = 
     lowApp.includes('facepunch') || 
     lowApp.includes('rust') || 
-    lowApp.includes('smart alarm');
+    lowApp.includes('companion');
 
-  const isContentMatch = 
-    lowTitle.includes('smart alarm') || 
-    lowText.includes('smart alarm') ||
-    lowTitle.includes('raid') ||
-    lowText.includes('raid') ||
-    lowTitle.includes('alarm') ||
-    lowTitle.includes('baskın');
+  const isAlarmContent = 
+    title.includes('smart alarm') || 
+    text.includes('smart alarm') ||
+    title.includes('raid') ||
+    text.includes('raid') ||
+    title.includes('baskın') ||
+    title.includes('alarm');
 
-  if (isRustMatch || isContentMatch) {
-    console.log('🚨 HEDEF BİLDİRİM YAKALANDI!');
+  if (isRustApp || isAlarmContent) {
+    console.log('🚨 RAID ALARMI TETİKLENDİ!');
 
     try {
       await Audio.setAudioModeAsync({

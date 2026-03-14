@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, AppState, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, AppState, ScrollView, Linking } from 'react-native';
 import RNAndroidNotificationListener from 'react-native-android-notification-listener';
 import { Audio } from 'expo-av';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function App() {
   const [hasPermission, setHasPermission] = useState(false);
-  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
     checkPermission();
-    loadLogs();
     
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState === 'active') {
         checkPermission();
-        loadLogs();
       }
     });
 
@@ -25,22 +21,6 @@ export default function App() {
   const checkPermission = async () => {
     const status = await RNAndroidNotificationListener.getPermissionStatus();
     setHasPermission(status !== 'denied');
-  };
-
-  const loadLogs = async () => {
-    try {
-      const storedLogs = await AsyncStorage.getItem('notification_logs');
-      if (storedLogs) {
-        setLogs(JSON.parse(storedLogs));
-      }
-    } catch (e) {
-      console.error('Logs Load Error:', e);
-    }
-  };
-
-  const clearLogs = async () => {
-    await AsyncStorage.removeItem('notification_logs');
-    setLogs([]);
   };
 
   const requestPermission = () => {
@@ -63,65 +43,58 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <View style={styles.header}>
-        <Text style={styles.title}>RAİD SİREN</Text>
-        <Text style={styles.subtitle}>Rust+ Sensör İzleyici V2</Text>
+        <Text style={styles.title}>RAİD SİREN V3</Text>
+        <Text style={styles.subtitle}>Kesin Çözüm Sistemi</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.card}>
-          <Text style={styles.statusText}>
-            Sistem Durumu:{' '}
-            <Text style={{ color: hasPermission ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
-              {hasPermission ? 'AKTİF (DİNLENİYOR)' : 'İZİN BEKLİYOR'}
-            </Text>
+      <View style={styles.card}>
+        <Text style={styles.statusText}>
+          Sistem Durumu:{' '}
+          <Text style={{ color: hasPermission ? '#4ade80' : '#f87171', fontWeight: 'bold' }}>
+            {hasPermission ? 'AKTİF (DİNLENİYOR)' : 'İZİN BEKLİYOR'}
           </Text>
+        </Text>
 
-          {!hasPermission && (
-            <TouchableOpacity style={styles.buttonRed} onPress={requestPermission}>
-              <Text style={styles.buttonText}>BİLDİRİM OKUMA İZNİ VER</Text>
-            </TouchableOpacity>
-          )}
-
-          {hasPermission && (
-            <Text style={styles.infoText}>
-              ✅ Çalışıyor! Rust+ bildirimlerini dinliyoruz. Oyundan "Smart Alarm" veya "Raid" içeren bir bildirim geldiği an siren çalacaktır.
-            </Text>
-          )}
-        </View>
-        
-        <View style={styles.card}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-            <Text style={styles.cardTitleSmall}>SON BİLDİRİMLER</Text>
-            <TouchableOpacity onPress={clearLogs}>
-              <Text style={{ color: '#94a3b8', fontSize: 12 }}>TEMİZLE</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {logs.length === 0 ? (
-            <Text style={styles.emptyText}>Henüz bildirim yakalanmadı...</Text>
-          ) : (
-            logs.map((log, index) => (
-              <View key={index} style={styles.logItem}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={styles.logApp}>{log.appName.substring(0, 20)}</Text>
-                  <Text style={styles.logTime}>{log.time}</Text>
-                </View>
-                <Text style={styles.logTitle}>{log.title}</Text>
-                <Text style={styles.logText} numberOfLines={1}>{log.text}</Text>
-              </View>
-            ))
-          )}
-        </View>
-
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.buttonBlue} onPress={testSiren}>
-            <Text style={styles.buttonText}>MANUEL SİREN TESTİ</Text>
+        {!hasPermission && (
+          <TouchableOpacity style={styles.buttonRed} onPress={requestPermission}>
+            <Text style={styles.buttonText}>BİLDİRİM İZNİ VER</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+        )}
+
+        {hasPermission && (
+          <Text style={styles.infoText}>
+            ✅ Uygulama şu an arka planda Rust+ bildirimlerini bekliyor.
+          </Text>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitleSmall}>⚠️ KRİTİK AYAR (XIAOMI/HUAWEI/SAMSUNG)</Text>
+        <Text style={styles.guideText}>
+          Arka planda siren çalabilmesi için lütfen bu ayarları yapın:{"\n\n"}
+          1. Uygulama ikonuna basılı tutun {'->'} <Text style={{fontWeight:'bold'}}>"Uygulama Bilgisi"</Text> kısmına girin.{"\n"}
+          2. <Text style={{fontWeight:'bold'}}>"Otomatik Başlatma"</Text> (Auto-start) iznini açın.{"\n"}
+          3. <Text style={{fontWeight:'bold'}}>"Pil Tasarrufu"</Text> kısmına girip <Text style={{fontWeight:'bold'}}>"Kısıtlama Yok"</Text> (No Restrictions) seçin.
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitleSmall}>🔍 NELER ALGILANIR?</Text>
+        <Text style={styles.guideText}>
+          • Rust+ uygulamasından gelen <Text style={{fontWeight:'bold'}}>HERHANGİ</Text> bir bildirim.{"\n"}
+          • Başlığında "Smart Alarm", "Raid", "Alarm" veya "Baskın" geçen her şey.
+        </Text>
+      </View>
+      
+      <View style={styles.card}>
+        <TouchableOpacity style={styles.buttonBlue} onPress={testSiren}>
+          <Text style={styles.buttonText}>SES TESTİ YAP (SİREN ÇAL)</Text>
+        </TouchableOpacity>
+      </View>
+      
+    </ScrollView>
   );
 }
 
@@ -160,6 +133,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#f87171',
     letterSpacing: 1,
+    marginBottom: 10,
   },
   statusText: {
     fontSize: 16,
@@ -173,11 +147,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'center',
   },
-  emptyText: {
-    fontSize: 12,
-    color: '#64748b',
-    textAlign: 'center',
-    fontStyle: 'italic',
+  guideText: {
+    fontSize: 13,
+    color: '#cbd5e1',
+    lineHeight: 22,
   },
   buttonRed: {
     backgroundColor: '#ef4444',
@@ -195,30 +168,5 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  logItem: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#334155',
-  },
-  logApp: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: 'bold',
-  },
-  logTime: {
-    fontSize: 10,
-    color: '#64748b',
-  },
-  logTitle: {
-    fontSize: 14,
-    color: '#f1f5f9',
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  logText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
   },
 });
