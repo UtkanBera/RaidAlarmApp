@@ -27,19 +27,16 @@ if (fs.existsSync(gradlePath)) {
       continue;
     }
 
-    // 3. Start commenting out afterEvaluate
+    // 3. Start commenting out afterEvaluate and EVERYTHING after it
     if (line.includes("afterEvaluate { project ->")) {
       inAfterEvaluate = true;
-      newLines.push("/* REMOVED BY PATCH");
-      newLines.push(line);
-      continue;
     }
 
-    newLines.push(line);
-  }
-
-  if (inAfterEvaluate) {
-    newLines.push("*/");
+    if (inAfterEvaluate) {
+      newLines.push("// PATCHED: " + line);
+    } else {
+      newLines.push(line);
+    }
   }
 
   fs.writeFileSync(gradlePath, newLines.join('\n'));
