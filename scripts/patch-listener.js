@@ -43,9 +43,12 @@ if (fs.existsSync(manifestPath)) {
   console.log('Patching AndroidManifest.xml...');
   let content = fs.readFileSync(manifestPath, 'utf8');
 
-  // Add android:exported="true" to the service and receiver
+  // Add android:exported="true" and fix android:allowBackup
   content = content.replace(/<service\s+android:name="\.RNAndroidNotificationListener"/g, '<service android:exported="true" android:name=".RNAndroidNotificationListener"');
   content = content.replace(/<receiver\s+android:name="com\.lesimoes\.androidnotificationlistener\.BootUpReceiver"/g, '<receiver android:exported="true" android:name="com.lesimoes.androidnotificationlistener.BootUpReceiver"');
+  
+  // Resolve allowBackup conflict
+  content = content.replace(/android:allowBackup="false"/g, 'android:allowBackup="true"');
 
   fs.writeFileSync(manifestPath, content);
 }
