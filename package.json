@@ -16,6 +16,12 @@
     "expo-av": "^15.0.2",
     "react-native-android-notification-listener": "4.0.0"
   },
+  "overrides": {
+    "react-native-android-notification-listener": {
+      "react": "$react",
+      "react-native": "$react-native"
+    }
+  },
   "devDependencies": {
     "@babel/core": "^7.25.2"
   },
