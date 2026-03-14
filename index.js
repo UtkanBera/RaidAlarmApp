@@ -2,30 +2,54 @@ import { registerRootComponent } from 'expo';
 import RNAndroidNotificationListener, { RNAndroidNotificationListenerHeadlessJsName } from 'react-native-android-notification-listener';
 import { AppRegistry } from 'react-native';
 import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import App from './App';
 
 let soundObject = null;
 
-// The background listener that wakes up when a notification arrives
 const headlessNotificationListener = async ({ notification }) => {
   if (!notification) return;
 
-  const appName = notification.app;
+  const appName = notification.app || '';
   const title = notification.title || '';
   const text = notification.text || '';
+  const time = new Date().toLocaleTimeString();
 
-  console.log('--- BİLDİRİM GELDİ ---');
-  console.log('Uygulama:', appName);
-  console.log('Başlık:', title);
-  console.log('İçerik:', text);
+  // Save the notification log for debugging in the UI
+  try {
+    const logEntry = { appName, title, text, time };
+    const existingLogs = await AsyncStorage.getItem('notification_logs');
+    const logs = existingLogs ? JSON.parse(existingLogs) : [];
+    logs.unshift(logEntry);
+    await AsyncStorage.setItem('notification_logs', JSON.stringify(logs.slice(0, 10)));
+  } catch (e) {
+    console.error('Log Save Error:', e);
+  }
 
-  // Check if it's from Rust+ or contains 'Smart Alarm'
-  // package name for rust+ is com.facepunch.rust.companion
-  if (appName === 'com.facepunch.rust.companion' || text.toLowerCase().includes('smart alarm') || title.toLowerCase().includes('smart alarm')) {
-    console.log('🚨 RUST+ BİLDİRİMİ YAKALANDI! SİREN ÇALINIYOR...');
+  console.log('--- BİLDİRİM GELDİ ---', { appName, title, text });
+
+  // BROADER MATCHING LOGIC
+  const lowTitle = title.toLowerCase();
+  const lowText = text.toLowerCase();
+  const lowApp = appName.toLowerCase();
+
+  const isRustMatch = 
+    lowApp.includes('facepunch') || 
+    lowApp.includes('rust') || 
+    lowApp.includes('smart alarm');
+
+  const isContentMatch = 
+    lowTitle.includes('smart alarm') || 
+    lowText.includes('smart alarm') ||
+    lowTitle.includes('raid') ||
+    lowText.includes('raid') ||
+    lowTitle.includes('alarm') ||
+    lowTitle.includes('baskın');
+
+  if (isRustMatch || isContentMatch) {
+    console.log('🚨 HEDEF BİLDİRİM YAKALANDI!');
 
     try {
-      // Configure audio to play even in silent mode with max volume
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         staysActiveInBackground: true,
@@ -42,7 +66,7 @@ const headlessNotificationListener = async ({ notification }) => {
       
       await soundObject.playAsync();
       
-      // Stop the sound automatically after 60 seconds if user doesn't open the app
+      // Stop after 60 seconds
       setTimeout(async () => {
          if (soundObject) {
             await soundObject.stopAsync();
@@ -55,11 +79,9 @@ const headlessNotificationListener = async ({ notification }) => {
   }
 };
 
-// Register the Headless JS Task
 AppRegistry.registerHeadlessTask(
   RNAndroidNotificationListenerHeadlessJsName,
   () => headlessNotificationListener
 );
 
-// Register the main UI
 registerRootComponent(App);
