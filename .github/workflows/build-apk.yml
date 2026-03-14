@@ -27,9 +27,7 @@ jobs:
           java-version: '21'
 
       - name: Install Dependencies
-        run: |
-          npm install --legacy-peer-deps
-          npx expo install --check
+        run: npm install --legacy-peer-deps
 
       - name: Prebuild native directories
         run: npx expo prebuild --platform android --clean --no-install

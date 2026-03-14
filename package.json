@@ -12,9 +12,9 @@
     "expo": "~52.0.36",
     "expo-status-bar": "~2.0.1",
     "react": "18.3.1",
-    "react-native": "0.76.7",
-    "expo-av": "^15.0.2",
-    "expo-modules-core": "~2.0.3",
+    "react-native": "0.76.9",
+    "expo-av": "~15.0.2",
+    "expo-modules-core": "~2.2.3",
     "react-native-android-notification-listener": "4.0.0"
   },
   "devDependencies": {
